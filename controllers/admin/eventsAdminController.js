@@ -1,6 +1,5 @@
-const { Event, Session } = require('../../models');
+import { Event, Session } from '../../models/index.js';
 
-// Allowed fields to prevent mass-assignment vuln
 const sanitizeEventInput = (input) => {
   const payload = {};
   if (Object.prototype.hasOwnProperty.call(input, 'title')) payload.title = input.title;
@@ -11,13 +10,13 @@ const sanitizeEventInput = (input) => {
   return payload;
 };
 
-exports.createEvent = async (req, res) => {
+const createEvent = async (req, res) => {
   const payload = sanitizeEventInput(req.body);
   const event = await Event.create(payload);
   res.status(201).json(event);
 };
 
-exports.updateEvent = async (req, res) => {
+const updateEvent = async (req, res) => {
   const event = await Event.findByPk(req.params.id);
   if (!event) return res.status(404).json({ error: 'Événement non trouvé' });
   const payload = sanitizeEventInput(req.body);
@@ -25,9 +24,11 @@ exports.updateEvent = async (req, res) => {
   res.json(event);
 };
 
-exports.deleteEvent = async (req, res) => {
+const deleteEvent = async (req, res) => {
   const event = await Event.findByPk(req.params.id);
   if (!event) return res.status(404).json({ error: 'Événement non trouvé' });
   await event.destroy();
   res.status(204).send();
 };
+
+export { createEvent, updateEvent, deleteEvent };

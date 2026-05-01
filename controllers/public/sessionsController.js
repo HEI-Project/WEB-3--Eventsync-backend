@@ -1,7 +1,7 @@
-const { Session, Room, Speaker, Question } = require('../../models');
-const { Op } = require('sequelize');
+import { Session, Room, Speaker, Question } from '../../models/index.js';
+import { Op } from 'sequelize';
 
-exports.getSessionById = async (req, res) => {
+const getSessionById = async (req, res) => {
   const session = await Session.findByPk(req.params.id, {
     include: ['room', { model: Speaker, as: 'speakers' }]
   });
@@ -9,7 +9,7 @@ exports.getSessionById = async (req, res) => {
   res.json(session);
 };
 
-exports.getSessionQuestions = async (req, res) => {
+const getSessionQuestions = async (req, res) => {
   const session = await Session.findByPk(req.params.id);
   if (!session) return res.status(404).json({ error: 'Session non trouvée' });
   const now = new Date();
@@ -23,7 +23,7 @@ exports.getSessionQuestions = async (req, res) => {
   res.json(questions);
 };
 
-exports.submitQuestion = async (req, res) => {
+const submitQuestion = async (req, res) => {
   const session = await Session.findByPk(req.params.id);
   if (!session) return res.status(404).json({ error: 'Session non trouvée' });
   const now = new Date();
@@ -40,7 +40,7 @@ exports.submitQuestion = async (req, res) => {
   res.status(201).json(question);
 };
 
-exports.upvoteQuestion = async (req, res) => {
+const upvoteQuestion = async (req, res) => {
   const question = await Question.findByPk(req.params.questionId);
   if (!question) return res.status(404).json({ error: 'Question non trouvée' });
   const session = await Session.findByPk(question.sessionId);
@@ -52,3 +52,5 @@ exports.upvoteQuestion = async (req, res) => {
   await question.save();
   res.json({ upvoteCount: question.upvoteCount });
 };
+
+export { getSessionById, getSessionQuestions, submitQuestion, upvoteQuestion };

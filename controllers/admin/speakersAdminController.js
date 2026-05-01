@@ -1,6 +1,5 @@
-const { Speaker } = require('../../models');
+import { Speaker } from '../../models/index.js';
 
-// Allowed fields to prevent mass-assignment vuln
 const sanitizeSpeakerInput = (input) => {
   const payload = {};
   if (Object.prototype.hasOwnProperty.call(input, 'fullName')) payload.fullName = input.fullName;
@@ -10,21 +9,25 @@ const sanitizeSpeakerInput = (input) => {
   return payload;
 };
 
-exports.createSpeaker = async (req, res) => {
+const createSpeaker = async (req, res) => {
   const payload = sanitizeSpeakerInput(req.body);
   const speaker = await Speaker.create(payload);
   res.status(201).json(speaker);
 };
-exports.updateSpeaker = async (req, res) => {
+
+const updateSpeaker = async (req, res) => {
   const speaker = await Speaker.findByPk(req.params.id);
   if (!speaker) return res.status(404).json({ error: 'Intervenant non trouvé' });
   const payload = sanitizeSpeakerInput(req.body);
   await speaker.update(payload);
   res.json(speaker);
 };
-exports.deleteSpeaker = async (req, res) => {
+
+const deleteSpeaker = async (req, res) => {
   const speaker = await Speaker.findByPk(req.params.id);
   if (!speaker) return res.status(404).json({ error: 'Intervenant non trouvé' });
   await speaker.destroy();
   res.status(204).send();
 };
+
+export { createSpeaker, updateSpeaker, deleteSpeaker };

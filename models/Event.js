@@ -1,5 +1,6 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
+
 const Event = sequelize.define('Event', {
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   title: { type: DataTypes.STRING, allowNull: false },
@@ -8,4 +9,5 @@ const Event = sequelize.define('Event', {
   endDate: { type: DataTypes.DATE, allowNull: false },
   location: { type: DataTypes.STRING }
 }, { tableName: 'events', timestamps: true });
-module.exports = Event;
+
+export default Event;

@@ -1,1 +1,11 @@
-const express = require('express'); const { authenticateAdmin } = require('../../middleware/auth'); const { createSession, updateSession, deleteSession } = require('../../controllers/admin/sessionsAdminController'); const router = express.Router(); router.use(authenticateAdmin); router.post('/', createSession); router.put('/:id', updateSession); router.delete('/:id', deleteSession); module.exports = router;
+import express from 'express';
+import { authenticateAdmin } from '../../middleware/auth.js';
+import { createSession, updateSession, deleteSession } from '../../controllers/admin/sessionsAdminController.js';
+
+const router = express.Router();
+router.use(authenticateAdmin);
+router.post('/', createSession);
+router.put('/:id', updateSession);
+router.delete('/:id', deleteSession);
+
+export default router;
