@@ -1,0 +1,736 @@
+openapi: 3.0.3
+info:
+  title: EventSync API
+  description: API de gestion d’événements avec planning multi-track, questions/réponses en direct, et pages publiques pour intervenants.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000/api
+    description: Serveur de développement
+
+tags:
+  - name: Événements (public)
+  - name: Sessions (public)
+  - name: Salles (public)
+  - name: Intervenants (public)
+  - name: Admin (authentifié)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        location:
+          type: string
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionLite'
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        capacity:
+          type: integer
+        eventId:
+          type: string
+          format: uuid
+        roomId:
+          type: string
+          format: uuid
+        room:
+          $ref: '#/components/schemas/Room'
+        speakers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Speaker'
+    SessionLite:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        room:
+          $ref: '#/components/schemas/Room'
+        speakers:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpeakerLite'
+    Room:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    Speaker:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+        photoUrl:
+          type: string
+        bio:
+          type: string
+        externalLinks:
+          type: array
+          items:
+            type: string
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionLite'
+    SpeakerLite:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+    Question:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        authorName:
+          type: string
+        upvoteCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+    QuestionInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+        authorName:
+          type: string
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+
+paths:
+  /events:
+    get:
+      summary: Liste tous les événements
+      tags: [Événements (public)]
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+  /events/{id}:
+    get:
+      summary: Détails d'un événement avec ses sessions
+      tags: [Événements (public)]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Événement trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          description: Événement non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sessions/{id}:
+    get:
+      summary: Détails d'une session (salles, intervenants)
+      tags: [Sessions (public)]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '404':
+          description: Session non trouvée
+
+  /sessions/{id}/questions:
+    get:
+      summary: Récupère les questions d'une session (triées par upvotes)
+      tags: [Sessions (public)]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Liste des questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Question'
+        '403':
+          description: Questions indisponibles (session non démarrée ou terminée)
+        '404':
+          description: Session non trouvée
+    post:
+      summary: Pose une question sur une session (uniquement si la session est en cours)
+      tags: [Sessions (public)]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionInput'
+      responses:
+        '201':
+          description: Question créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+        '400':
+          description: Contenu manquant
+        '403':
+          description: Session non live
+        '404':
+          description: Session non trouvée
+
+  /questions/{questionId}/upvote:
+    post:
+      summary: Upvote une question (accessible uniquement si la session est encore en cours)
+      tags: [Sessions (public)]
+      parameters:
+        - name: questionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Upvote comptabilisé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  upvoteCount:
+                    type: integer
+        '403':
+          description: La session associée n'est plus live
+        '404':
+          description: Question non trouvée
+
+  /speakers:
+    get:
+      summary: Liste tous les intervenants
+      tags: [Intervenants (public)]
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpeakerLite'
+  /speakers/{id}:
+    get:
+      summary: Page publique d’un intervenant avec ses sessions
+      tags: [Intervenants (public)]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Intervenant trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Speaker'
+        '404':
+          description: Intervenant non trouvé
+
+  /rooms:
+    get:
+      summary: Liste toutes les salles avec les sessions associées
+      tags: [Salles (public)]
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: '#/components/schemas/Room'
+                    - type: object
+                      properties:
+                        sessions:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/SessionLite'
+
+  # ---------- Routes Admin (JWT requis) ----------
+  /admin/auth/register:
+    post:
+      summary: Inscription d’un nouvel administrateur
+      tags: [Admin (authentifié)]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '201':
+          description: Admin créé, JWT retourné
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      email:
+                        type: string
+                      role:
+                        type: string
+        '400':
+          description: Email déjà utilisé ou champs manquants
+  /admin/auth/login:
+    post:
+      summary: Connexion administrateur
+      tags: [Admin (authentifié)]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Connexion réussie, JWT retourné
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    type: object
+        '401':
+          description: Identifiants invalides
+
+  /admin/events:
+    post:
+      summary: Créer un événement
+      tags: [Admin (authentifié)]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, startDate, endDate]
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                startDate:
+                  type: string
+                  format: date-time
+                endDate:
+                  type: string
+                  format: date-time
+                location:
+                  type: string
+      responses:
+        '201':
+          description: Événement créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '401':
+          description: Non authentifié
+  /admin/events/{id}:
+    put:
+      summary: Modifier un événement
+      tags: [Admin (authentifié)]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                startDate:
+                  type: string
+                  format: date-time
+                endDate:
+                  type: string
+                  format: date-time
+                location:
+                  type: string
+      responses:
+        '200':
+          description: Événement modifié
+        '404':
+          description: Non trouvé
+    delete:
+      summary: Supprimer un événement (entraîne la suppression des sessions associées)
+      tags: [Admin (authentifié)]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        '204':
+          description: Supprimé
+        '404':
+          description: Non trouvé
+
+  /admin/sessions:
+    post:
+      summary: Créer une session
+      tags: [Admin (authentifié)]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, startTime, endTime, eventId, roomId]
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                startTime:
+                  type: string
+                  format: date-time
+                endTime:
+                  type: string
+                  format: date-time
+                eventId:
+                  type: string
+                  format: uuid
+                roomId:
+                  type: string
+                  format: uuid
+                capacity:
+                  type: integer
+                speakerIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '201':
+          description: Session créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+  /admin/sessions/{id}:
+    put:
+      summary: Modifier une session (y compris l’association avec speakers)
+      tags: [Admin (authentifié)]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                startTime:
+                  type: string
+                  format: date-time
+                endTime:
+                  type: string
+                  format: date-time
+                roomId:
+                  type: string
+                  format: uuid
+                capacity:
+                  type: integer
+                speakerIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '200':
+          description: Session modifiée
+        '404':
+          description: Non trouvée
+    delete:
+      summary: Supprimer une session (les questions associées seront supprimées en cascade)
+      tags: [Admin (authentifié)]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        '204':
+          description: Supprimée
+
+  /admin/rooms:
+    post:
+      summary: Créer une salle
+      tags: [Admin (authentifié)]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Salle créée
+  /admin/rooms/{id}:
+    put:
+      summary: Modifier une salle
+      tags: [Admin (authentifié)]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '200': 
+          description: Modifiée
+        '404':
+          description: Salle non trouvée
+    delete:
+      summary: Supprimer une salle (les sessions perdront leur salle)
+      tags: [Admin (authentifié)]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        '204':
+          description: Supprimée
+
+  /admin/speakers:
+    post:
+      summary: Créer un intervenant
+      tags: [Admin (authentifié)]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName]
+              properties:
+                fullName:
+                  type: string
+                photoUrl:
+                  type: string
+                bio:
+                  type: string
+                externalLinks:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Intervenant créé
+  /admin/speakers/{id}:
+    put:
+      summary: Modifier un intervenant
+      tags: [Admin (authentifié)]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                photoUrl:
+                  type: string
+                bio:
+                  type: string
+                externalLinks:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Intervenant modifié
+        '404':
+          description: Non trouvé
+    delete:
+      summary: Supprimer un intervenant
+      tags: [Admin (authentifié)]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        '204':
+          description: Supprimé

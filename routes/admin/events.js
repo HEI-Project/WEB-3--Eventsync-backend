@@ -1,0 +1,9 @@
+import express from 'express';
+import { authenticateAdmin } from '../../middleware/auth.js';
+import { createEvent, updateEvent, deleteEvent } from '../../controllers/admin/eventsAdminController.js';
+const router = express.Router();
+router.use(authenticateAdmin);
+router.post('/', createEvent);
+router.put('/:id', updateEvent);
+router.delete('/:id', deleteEvent);
+export default router;
