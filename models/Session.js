@@ -7,7 +7,9 @@ const Session = sequelize.define('Session', {
   description: { type: DataTypes.TEXT },
   startTime: { type: DataTypes.DATE, allowNull: false },
   endTime: { type: DataTypes.DATE, allowNull: false },
-  capacity: { type: DataTypes.INTEGER }
+  capacity: { type: DataTypes.INTEGER },
+  eventId: { type: DataTypes.UUID, allowNull: false, references: { model: 'events', key: 'id' } },
+  roomId: { type: DataTypes.UUID, allowNull: false, references: { model: 'rooms', key: 'id' } }
 }, { tableName: 'sessions', timestamps: true });
 
 export default Session;

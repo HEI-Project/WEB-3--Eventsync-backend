@@ -1,5 +1,13 @@
 import { Event, Session, Room, Speaker } from '../../models/index.js';
-import { Op } from 'sequelize';
+
+const addLiveStatus = (sessions) => {
+  const now = new Date();
+  return sessions.map(s => {
+    const data = s.toJSON();
+    data.isLive = now >= new Date(s.startTime) && now <= new Date(s.endTime);
+    return data;
+  });
+};
 
 const getAllEvents = async (req, res) => {
   const events = await Event.findAll({ order: [['startDate', 'ASC']] });
@@ -11,7 +19,9 @@ const getEventById = async (req, res) => {
     include: [{ model: Session, as: 'sessions', include: ['room', { model: Speaker, as: 'speakers' }] }]
   });
   if (!event) return res.status(404).json({ error: 'Événement non trouvé' });
-  res.json(event);
+  const data = event.toJSON();
+  if (data.sessions) data.sessions = addLiveStatus(data.sessions);
+  res.json(data);
 };
 
 export { getAllEvents, getEventById };

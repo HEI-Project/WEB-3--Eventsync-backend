@@ -1,12 +1,14 @@
 import { Session, Room, Speaker, Question } from '../../models/index.js';
-import { Op } from 'sequelize';
 
 const getSessionById = async (req, res) => {
   const session = await Session.findByPk(req.params.id, {
     include: ['room', { model: Speaker, as: 'speakers' }]
   });
   if (!session) return res.status(404).json({ error: 'Session non trouvée' });
-  res.json(session);
+  const data = session.toJSON();
+  const now = new Date();
+  data.isLive = now >= new Date(session.startTime) && now <= new Date(session.endTime);
+  res.json(data);
 };
 
 const getSessionQuestions = async (req, res) => {
