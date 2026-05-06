@@ -2,13 +2,43 @@ import { Session, Room, Speaker, Question } from '../../models/index.js';
 
 const getSessionById = async (req, res) => {
   const session = await Session.findByPk(req.params.id, {
-    include: ['room', { model: Speaker, as: 'speakers' }]
+    include: ['room', 'event', { model: Speaker, as: 'speakers' }]
   });
-  if (!session) return res.status(404).json({ error: 'Session non trouvée' });
+
+  if (!session) {
+    return res.status(404).json({ error: 'Session non trouvée' });
+  }
+
   const data = session.toJSON();
   const now = new Date();
-  data.isLive = now >= new Date(session.startTime) && now <= new Date(session.endTime);
+
+  data.isLive =
+    now >= new Date(data.startTime) &&
+    now <= new Date(data.endTime);
+
   res.json(data);
+};
+
+const getAll = async (req, res) => {
+  const sessions = await Session.findAll({
+    include: [
+  { association: 'room' },
+  { association: 'event' },
+  { model: Speaker, as: 'speakers' }
+]
+  });
+
+  const now = new Date();
+
+  const data = sessions.map(session => {
+    const s = session.toJSON();
+    return {
+      ...s,
+      isLive: now >= new Date(s.startTime) && now <= new Date(s.endTime)
+    };
+  });
+
+  res.json(...data);
 };
 
 const getSessionQuestions = async (req, res) => {
@@ -55,4 +85,4 @@ const upvoteQuestion = async (req, res) => {
   res.json({ upvoteCount: question.upvoteCount });
 };
 
-export { getSessionById, getSessionQuestions, submitQuestion, upvoteQuestion };
+export {getAll, getSessionById, getSessionQuestions, submitQuestion, upvoteQuestion };

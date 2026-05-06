@@ -24,4 +24,5 @@ const getEventById = async (req, res) => {
   res.json(data);
 };
 
+
 export { getAllEvents, getEventById };
