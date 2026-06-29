@@ -1,4 +1,5 @@
-import { Speaker } from '../../models/index.js';
+import { Speaker, Session } from '../../models/index.js';
+import { paginate, paginatedResponse } from '../../utils/pagination.js';
 
 const sanitizeSpeakerInput = (input) => {
   const payload = {};
@@ -30,4 +31,23 @@ const deleteSpeaker = async (req, res) => {
   res.status(204).send();
 };
 
-export { createSpeaker, updateSpeaker, deleteSpeaker };
+const listSpeakers = async (req, res) => {
+  const { offset, limit, page, pageSize } = paginate(req.query);
+  const { rows, count } = await Speaker.findAndCountAll({
+    distinct: true,
+    include: [{ model: Session, as: 'sessions' }],
+    offset,
+    limit,
+  });
+  res.json(paginatedResponse(rows, count, page, pageSize));
+};
+
+const getSpeakerById = async (req, res) => {
+  const speaker = await Speaker.findByPk(req.params.id, {
+    include: [{ model: Session, as: 'sessions', include: ['room'] }]
+  });
+  if (!speaker) return res.status(404).json({ error: 'Intervenant non trouvé' });
+  res.json(speaker);
+};
+
+export { createSpeaker, updateSpeaker, deleteSpeaker, listSpeakers, getSpeakerById };

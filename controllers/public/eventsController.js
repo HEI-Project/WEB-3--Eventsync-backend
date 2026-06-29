@@ -3,14 +3,16 @@ import { Event, Session, Room, Speaker } from '../../models/index.js';
 const addLiveStatus = (sessions) => {
   const now = new Date();
   return sessions.map(s => {
-    const data = s.toJSON();
-    data.isLive = now >= new Date(s.startTime) && now <= new Date(s.endTime);
-    return data;
+    s.isLive = now >= new Date(s.startTime) && now <= new Date(s.endTime);
+    return s;
   });
 };
 
 const getAllEvents = async (req, res) => {
-  const events = await Event.findAll({ order: [['startDate', 'ASC']] });
+  const events = await Event.findAll({
+    order: [['startDate', 'ASC']],
+    include: [{ model: Session, as: 'sessions' }]
+  });
   res.json(events);
 };
 

@@ -1,5 +1,13 @@
 import { Session, Room, Speaker, Question } from '../../models/index.js';
 
+const getAllSessions = async (req, res) => {
+  const sessions = await Session.findAll({
+    include: ['room', { model: Speaker, as: 'speakers' }],
+    order: [['startTime', 'ASC']]
+  });
+  res.json(sessions);
+};
+
 const getSessionById = async (req, res) => {
   const session = await Session.findByPk(req.params.id, {
     include: ['room', { model: Speaker, as: 'speakers' }]
@@ -15,8 +23,8 @@ const getSessionQuestions = async (req, res) => {
   const session = await Session.findByPk(req.params.id);
   if (!session) return res.status(404).json({ error: 'Session non trouvée' });
   const now = new Date();
-  if (now < session.startTime || now > session.endTime) {
-    return res.status(403).json({ error: 'Les questions ne sont disponibles que lorsque la session est en cours' });
+  if (now < session.startTime) {
+    return res.status(403).json({ error: 'Les questions seront disponibles au début de la session' });
   }
   const questions = await Question.findAll({
     where: { sessionId: req.params.id },
@@ -42,17 +50,21 @@ const submitQuestion = async (req, res) => {
   res.status(201).json(question);
 };
 
+const upvoteRegistry = new Set();
+
 const upvoteQuestion = async (req, res) => {
   const question = await Question.findByPk(req.params.questionId);
   if (!question) return res.status(404).json({ error: 'Question non trouvée' });
-  const session = await Session.findByPk(question.sessionId);
-  const now = new Date();
-  if (now < session.startTime || now > session.endTime) {
-    return res.status(403).json({ error: 'Impossible de voter en dehors de la session en cours' });
+
+  const key = `${req.params.questionId}:${req.ip}`;
+  if (upvoteRegistry.has(key)) {
+    return res.status(429).json({ error: 'Vous avez déjà voté pour cette question' });
   }
+
   question.upvoteCount += 1;
   await question.save();
+  upvoteRegistry.add(key);
   res.json({ upvoteCount: question.upvoteCount });
 };
 
-export { getSessionById, getSessionQuestions, submitQuestion, upvoteQuestion };
+export { getAllSessions, getSessionById, getSessionQuestions, submitQuestion, upvoteQuestion };

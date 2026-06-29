@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import 'express-async-errors';
 import { sequelize } from './config/database.js';
 
 // Import des routes publiques et admin
@@ -25,7 +26,7 @@ const PORT = process.env.PORT || 5000;
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 2000 }));
 
 app.get('/ping', (req, res) => {
   res.send('pong')

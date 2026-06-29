@@ -1,8 +1,10 @@
 import express from 'express';
 import { authenticateAdmin } from '../../middleware/auth.js';
-import { createSpeaker, updateSpeaker, deleteSpeaker } from '../../controllers/admin/speakersAdminController.js';
+import { createSpeaker, updateSpeaker, deleteSpeaker, listSpeakers, getSpeakerById } from '../../controllers/admin/speakersAdminController.js';
 const router = express.Router();
 router.use(authenticateAdmin);
+router.get('/', listSpeakers);
+router.get('/:id', getSpeakerById);
 router.post('/', createSpeaker);
 router.put('/:id', updateSpeaker);
 router.delete('/:id', deleteSpeaker);

@@ -3,9 +3,8 @@ import { Room, Session, Speaker } from '../../models/index.js';
 const addLiveStatus = (sessions) => {
   const now = new Date();
   return sessions.map(s => {
-    const data = s.toJSON();
-    data.isLive = now >= new Date(s.startTime) && now <= new Date(s.endTime);
-    return data;
+    s.isLive = now >= new Date(s.startTime) && now <= new Date(s.endTime);
+    return s;
   });
 };
 

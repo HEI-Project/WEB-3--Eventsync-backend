@@ -1,4 +1,5 @@
-import { Event, Session } from '../../models/index.js';
+import { Event, Session, Speaker } from '../../models/index.js';
+import { paginate, paginatedResponse } from '../../utils/pagination.js';
 
 const sanitizeEventInput = (input) => {
   const payload = {};
@@ -31,4 +32,24 @@ const deleteEvent = async (req, res) => {
   res.status(204).send();
 };
 
-export { createEvent, updateEvent, deleteEvent };
+const listEvents = async (req, res) => {
+  const { offset, limit, page, pageSize } = paginate(req.query);
+  const { rows, count } = await Event.findAndCountAll({
+    distinct: true,
+    order: [['startDate', 'ASC']],
+    include: [{ model: Session, as: 'sessions', separate: true }],
+    offset,
+    limit,
+  });
+  res.json(paginatedResponse(rows, count, page, pageSize));
+};
+
+const getEventById = async (req, res) => {
+  const event = await Event.findByPk(req.params.id, {
+    include: [{ model: Session, as: 'sessions', include: ['room', { model: Speaker, as: 'speakers' }] }]
+  });
+  if (!event) return res.status(404).json({ error: 'Événement non trouvé' });
+  res.json(event);
+};
+
+export { createEvent, updateEvent, deleteEvent, listEvents, getEventById };

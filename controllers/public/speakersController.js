@@ -1,11 +1,11 @@
 import { Speaker, Session, Room, Question } from '../../models/index.js';
+import { paginate, paginatedResponse } from '../../utils/pagination.js';
 
 const addLiveStatus = (sessions) => {
   const now = new Date();
   return sessions.map(s => {
-    const data = s.toJSON();
-    data.isLive = now >= new Date(s.startTime) && now <= new Date(s.endTime);
-    return data;
+    s.isLive = now >= new Date(s.startTime) && now <= new Date(s.endTime);
+    return s;
   });
 };
 
@@ -20,8 +20,14 @@ const getSpeakerById = async (req, res) => {
 };
 
 const getAllSpeakers = async (req, res) => {
-  const speakers = await Speaker.findAll();
-  res.json(speakers);
+  const { offset, limit, page, pageSize } = paginate(req.query);
+  const { rows, count } = await Speaker.findAndCountAll({
+    distinct: true,
+    include: [{ model: Session, as: 'sessions' }],
+    offset,
+    limit,
+  });
+  res.json(paginatedResponse(rows, count, page, pageSize));
 };
 
 const getSpeakerSessionQuestions = async (req, res) => {
