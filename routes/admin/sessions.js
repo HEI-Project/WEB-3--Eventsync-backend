@@ -1,9 +1,11 @@
 import express from 'express';
 import { authenticateAdmin } from '../../middleware/auth.js';
-import { createSession, updateSession, deleteSession } from '../../controllers/admin/sessionsAdminController.js';
+import { createSession, updateSession, deleteSession, listSessions, getSessionById } from '../../controllers/admin/sessionsAdminController.js';
 
 const router = express.Router();
 router.use(authenticateAdmin);
+router.get('/', listSessions);
+router.get('/:id', getSessionById);
 router.post('/', createSession);
 router.put('/:id', updateSession);
 router.delete('/:id', deleteSession);

@@ -1,4 +1,5 @@
 import { Session, Speaker } from '../../models/index.js';
+import { paginate, paginatedResponse } from '../../utils/pagination.js';
 
 const sanitizeSessionInput = (input) => {
   const payload = {};
@@ -45,4 +46,24 @@ const deleteSession = async (req, res) => {
   res.status(204).send();
 };
 
-export { createSession, updateSession, deleteSession };
+const listSessions = async (req, res) => {
+  const { offset, limit, page, pageSize } = paginate(req.query);
+  const { rows, count } = await Session.findAndCountAll({
+    distinct: true,
+    include: ['room', 'event', { model: Speaker, as: 'speakers' }],
+    order: [['startTime', 'ASC']],
+    offset,
+    limit,
+  });
+  res.json(paginatedResponse(rows, count, page, pageSize));
+};
+
+const getSessionById = async (req, res) => {
+  const session = await Session.findByPk(req.params.id, {
+    include: ['room', 'event', { model: Speaker, as: 'speakers' }]
+  });
+  if (!session) return res.status(404).json({ error: 'Session non trouvée' });
+  res.json(session);
+};
+
+export { createSession, updateSession, deleteSession, listSessions, getSessionById };
