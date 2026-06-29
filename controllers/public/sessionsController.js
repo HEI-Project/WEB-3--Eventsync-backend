@@ -38,7 +38,7 @@ const getAll = async (req, res) => {
     };
   });
 
-  res.json(...data);
+  res.json(data);
 };
 
 const getSessionQuestions = async (req, res) => {
