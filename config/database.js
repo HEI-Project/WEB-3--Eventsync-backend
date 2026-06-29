@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const sequelize = new Sequelize(
   process.env.DB_NAME || 'eventsync_db',
   process.env.DB_USER || 'postgres',
@@ -12,7 +14,15 @@ const sequelize = new Sequelize(
     port: process.env.DB_PORT || 5432,
     dialect: 'postgres',
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
-    pool: { max: 5, min: 0, acquire: 30000, idle: 10000 }
+    pool: { max: 5, min: 0, acquire: 30000, idle: 10000 },
+    ...(isProduction && {
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false,
+        },
+      },
+    }),
   }
 );
 
