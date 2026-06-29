@@ -50,7 +50,7 @@ const listSessions = async (req, res) => {
   const { offset, limit, page, pageSize } = paginate(req.query);
   const { rows, count } = await Session.findAndCountAll({
     distinct: true,
-    include: ['room', { model: Speaker, as: 'speakers' }],
+    include: ['room', 'event', { model: Speaker, as: 'speakers' }],
     order: [['startTime', 'ASC']],
     offset,
     limit,
@@ -60,7 +60,7 @@ const listSessions = async (req, res) => {
 
 const getSessionById = async (req, res) => {
   const session = await Session.findByPk(req.params.id, {
-    include: ['room', { model: Speaker, as: 'speakers' }]
+    include: ['room', 'event', { model: Speaker, as: 'speakers' }]
   });
   if (!session) return res.status(404).json({ error: 'Session non trouvée' });
   res.json(session);
