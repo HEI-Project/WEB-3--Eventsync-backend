@@ -13,8 +13,8 @@ Session.belongsTo(Event, { foreignKey: 'eventId', as: 'event' });
 Session.belongsTo(Room, { foreignKey: 'roomId', as: 'room' });
 Room.hasMany(Session, { foreignKey: 'roomId', as: 'sessions' });
 
-Session.belongsToMany(Speaker, { through: 'SessionSpeakers', as: 'speakers', foreignKey: 'sessionId', otherKey: 'speakerId' });
-Speaker.belongsToMany(Session, { through: 'SessionSpeakers', as: 'sessions', foreignKey: 'speakerId', otherKey: 'sessionId' });
+Session.belongsToMany(Speaker, { through: 'SessionSpeakers', as: 'speakers', foreignKey: 'SessionId', otherKey: 'SpeakerId' });
+Speaker.belongsToMany(Session, { through: 'SessionSpeakers', as: 'sessions', foreignKey: 'SpeakerId', otherKey: 'SessionId' });
 
 Session.hasMany(Question, { foreignKey: 'sessionId', as: 'questions' });
 Question.belongsTo(Session, { foreignKey: 'sessionId', as: 'session' });
