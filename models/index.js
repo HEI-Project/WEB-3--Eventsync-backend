@@ -5,6 +5,7 @@ import Session from './Session.js';
 import Room from './Room.js';
 import Speaker from './Speaker.js';
 import Question from './Question.js';
+import QuestionUpvote from './QuestionUpvote.js';
 
 // Associations
 Event.hasMany(Session, { foreignKey: 'eventId', as: 'sessions' });
@@ -19,4 +20,7 @@ Speaker.belongsToMany(Session, { through: 'SessionSpeakers', as: 'sessions', for
 Session.hasMany(Question, { foreignKey: 'sessionId', as: 'questions' });
 Question.belongsTo(Session, { foreignKey: 'sessionId', as: 'session' });
 
-export { sequelize, User, Event, Session, Room, Speaker, Question };
+Question.hasMany(QuestionUpvote, { foreignKey: 'questionId', as: 'upvotes' });
+QuestionUpvote.belongsTo(Question, { foreignKey: 'questionId', as: 'question' });
+
+export { sequelize, User, Event, Session, Room, Speaker, Question, QuestionUpvote };

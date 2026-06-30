@@ -1,4 +1,4 @@
-import { Session, Room, Speaker, Question } from '../../models/index.js';
+import { Session, Room, Speaker, Question, QuestionUpvote } from '../../models/index.js';
 
 const getAllSessions = async (req, res) => {
   const sessions = await Session.findAll({
@@ -50,20 +50,20 @@ const submitQuestion = async (req, res) => {
   res.status(201).json(question);
 };
 
-const upvoteRegistry = new Set();
-
 const upvoteQuestion = async (req, res) => {
   const question = await Question.findByPk(req.params.questionId);
   if (!question) return res.status(404).json({ error: 'Question non trouvée' });
 
-  const key = `${req.params.questionId}:${req.ip}`;
-  if (upvoteRegistry.has(key)) {
+  const existing = await QuestionUpvote.findOne({
+    where: { questionId: req.params.questionId, ip: req.ip }
+  });
+  if (existing) {
     return res.status(429).json({ error: 'Vous avez déjà voté pour cette question' });
   }
 
+  await QuestionUpvote.create({ questionId: req.params.questionId, ip: req.ip });
   question.upvoteCount += 1;
   await question.save();
-  upvoteRegistry.add(key);
   res.json({ upvoteCount: question.upvoteCount });
 };
 
