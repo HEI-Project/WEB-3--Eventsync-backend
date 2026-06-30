@@ -54,14 +54,16 @@ const upvoteQuestion = async (req, res) => {
   const question = await Question.findByPk(req.params.questionId);
   if (!question) return res.status(404).json({ error: 'Question non trouvée' });
 
+  const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
+
   const existing = await QuestionUpvote.findOne({
-    where: { questionId: req.params.questionId, ip: req.ip }
+    where: { questionId: req.params.questionId, ip: clientIp }
   });
   if (existing) {
     return res.status(429).json({ error: 'Vous avez déjà voté pour cette question' });
   }
 
-  await QuestionUpvote.create({ questionId: req.params.questionId, ip: req.ip });
+  await QuestionUpvote.create({ questionId: req.params.questionId, ip: clientIp });
   question.upvoteCount += 1;
   await question.save();
   res.json({ upvoteCount: question.upvoteCount });

@@ -6,7 +6,7 @@ const router = express.Router();
 
 const upvoteLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 10,
+  max: 60,
   message: { error: 'Trop de tentatives. Veuillez réessayer dans une minute.' }
 });
 
