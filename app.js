@@ -22,6 +22,8 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+app.set('trust proxy', 1);
+
 // Sécurité
 app.use(helmet());
 app.use(cors());
@@ -50,7 +52,7 @@ app.get('/api/health', (req, res) => res.status(200).json({ status: 'OK' }));
 
 // Gestion des erreurs
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error(err.message, '\n', err.stack);
   res.status(500).json({ error: 'Erreur interne du serveur' });
 });
 
