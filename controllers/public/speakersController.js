@@ -1,5 +1,4 @@
 import { Speaker, Session, Room, Question } from '../../models/index.js';
-import { paginate, paginatedResponse } from '../../utils/pagination.js';
 
 const addLiveStatus = (sessions) => {
   const now = new Date();
@@ -20,14 +19,11 @@ const getSpeakerById = async (req, res) => {
 };
 
 const getAllSpeakers = async (req, res) => {
-  const { offset, limit, page, pageSize } = paginate(req.query);
-  const { rows, count } = await Speaker.findAndCountAll({
-    distinct: true,
+  const speakers = await Speaker.findAll({
     include: [{ model: Session, as: 'sessions' }],
-    offset,
-    limit,
+    order: [['fullName', 'ASC']]
   });
-  res.json(paginatedResponse(rows, count, page, pageSize));
+  res.json(speakers);
 };
 
 const getSpeakerSessionQuestions = async (req, res) => {
